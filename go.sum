@@ -72,6 +72,8 @@ github.com/carabiner-dev/attestation v0.2.1 h1:VhjV5YlO9TsW50Sr/Zd54bdbZhhDAqgxC
 github.com/carabiner-dev/attestation v0.2.1/go.mod h1:O84vF84RZG3pJO/6BYrPs718bZviHF5DKajP1HsrDpw=
 github.com/carabiner-dev/command v0.3.1 h1:iBkh+AjwziFZmyihv/izypCV74nkmaslZxb5AgP7GP4=
 github.com/carabiner-dev/command v0.3.1/go.mod h1:0mWfS5BU/krtaI1hgD5wjmLpjWVlf38KY8usA8zfF5c=
+github.com/carabiner-dev/signer v0.4.6-0.20260428182929-2749e66cbe88 h1:9Iij1K4kXYuKKk+2ZkrNR5pJjt/j1q6Yf7gGt7XPQlY=
+github.com/carabiner-dev/signer v0.4.6-0.20260428182929-2749e66cbe88/go.mod h1:lQXabEgyFNLm49T3K3PKmU//H1+hEIOsF+13ZKgXhCs=
 github.com/carabiner-labs/protect v0.0.0-20260430191213-586fad231df3 h1:Pz26cpVSetJwVwjmWIqEZAgleqb6anqHp2dfDq5LZmo=
 github.com/carabiner-labs/protect v0.0.0-20260430191213-586fad231df3/go.mod h1:xTvZZcFR+5/FYOjVFAtfELueOFfXA1twAkEmXB+cBOY=
 github.com/cenkalti/backoff/v4 v4.3.0 h1:MyRJ/UdXutAwSAT+s3wNd7MfTIcy71VQueUuFK343L8=

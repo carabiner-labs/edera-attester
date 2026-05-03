@@ -98,5 +98,3 @@ require (
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20260120221211-b8f7ae30c516 // indirect
 	google.golang.org/grpc v1.80.0 // indirect
 )
-
-replace github.com/carabiner-dev/signer => /Users/puerco/projects/carabiner/signer
