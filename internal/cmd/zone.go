@@ -8,6 +8,7 @@ import (
 	"fmt"
 
 	"github.com/carabiner-dev/command/output"
+	"github.com/carabiner-dev/signer"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 
@@ -16,18 +17,21 @@ import (
 
 type zoneOptions struct {
 	daemon daemonOptions
+	sign   signOptions
 	out    output.Options
 	ZoneID string
 }
 
 func (zo *zoneOptions) AddFlags(cmd *cobra.Command) {
 	zo.daemon.AddFlags(cmd)
+	zo.sign.AddFlags(cmd)
 	zo.out.AddFlags(cmd)
 }
 
 func (zo *zoneOptions) Validate() error {
 	errs := []error{
 		zo.daemon.Validate(),
+		zo.sign.Validate(),
 		zo.out.Validate(),
 	}
 	if zo.ZoneID == "" {
@@ -37,7 +41,9 @@ func (zo *zoneOptions) Validate() error {
 }
 
 func addZone(parent *cobra.Command) {
-	opts := &zoneOptions{}
+	opts := &zoneOptions{
+		sign: defaultSignOptions(),
+	}
 	cmd := &cobra.Command{
 		Short:         "produce an in-toto attestation for an Edera Protect zone",
 		Long:          "Produce an in-toto attestation describing the state of an Edera Protect zone as reported by the daemon.",
@@ -76,6 +82,19 @@ func addZone(parent *cobra.Command) {
 			w, err := opts.out.GetWriter()
 			if err != nil {
 				return fmt.Errorf("opening output: %w", err)
+			}
+
+			if opts.sign.Sign {
+				s, err := signer.NewSignerFromSet(opts.sign.SignerSet)
+				if err != nil {
+					return fmt.Errorf("building signer: %w", err)
+				}
+				defer func() {
+					if err := s.Close(); err != nil {
+						logrus.Warnf("closing signer: %v", err)
+					}
+				}()
+				return signAndWriteStatement(w, statement, s)
 			}
 			return writeStatement(w, statement)
 		},

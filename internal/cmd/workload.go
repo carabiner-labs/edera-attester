@@ -8,6 +8,7 @@ import (
 	"fmt"
 
 	"github.com/carabiner-dev/command/output"
+	"github.com/carabiner-dev/signer"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 
@@ -17,6 +18,7 @@ import (
 type workloadOptions struct {
 	daemon     daemonOptions
 	self       selfOptions
+	sign       signOptions
 	out        output.Options
 	WorkloadID string
 }
@@ -24,6 +26,7 @@ type workloadOptions struct {
 func (wo *workloadOptions) AddFlags(cmd *cobra.Command) {
 	wo.daemon.AddFlags(cmd)
 	wo.self.AddFlags(cmd)
+	wo.sign.AddFlags(cmd)
 	wo.out.AddFlags(cmd)
 }
 
@@ -31,6 +34,7 @@ func (wo *workloadOptions) Validate() error {
 	errs := []error{
 		wo.daemon.Validate(),
 		wo.self.Validate(),
+		wo.sign.Validate(),
 		wo.out.Validate(),
 	}
 	switch {
@@ -43,7 +47,9 @@ func (wo *workloadOptions) Validate() error {
 }
 
 func addWorkload(parent *cobra.Command) {
-	opts := &workloadOptions{}
+	opts := &workloadOptions{
+		sign: defaultSignOptions(),
+	}
 	cmd := &cobra.Command{
 		Short: "produce an in-toto attestation for an Edera Protect workload",
 		Long: `Produce an in-toto attestation describing an Edera Protect workload, ` +
@@ -93,6 +99,19 @@ func addWorkload(parent *cobra.Command) {
 			w, err := opts.out.GetWriter()
 			if err != nil {
 				return fmt.Errorf("opening output: %w", err)
+			}
+
+			if opts.sign.Sign {
+				s, err := signer.NewSignerFromSet(opts.sign.SignerSet)
+				if err != nil {
+					return fmt.Errorf("building signer: %w", err)
+				}
+				defer func() {
+					if err := s.Close(); err != nil {
+						logrus.Warnf("closing signer: %v", err)
+					}
+				}()
+				return signAndWriteStatement(w, statement, s)
 			}
 			return writeStatement(w, statement)
 		},
