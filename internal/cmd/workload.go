@@ -21,6 +21,7 @@ type workloadOptions struct {
 	sign       signOptions
 	out        output.Options
 	WorkloadID string
+	argID      string // raw positional arg, before --self resolution
 }
 
 func (wo *workloadOptions) AddFlags(cmd *cobra.Command) {
@@ -38,7 +39,7 @@ func (wo *workloadOptions) Validate() error {
 		wo.out.Validate(),
 	}
 	switch {
-	case wo.self.Self && wo.WorkloadID != "":
+	case wo.self.Self && wo.argID != "":
 		errs = append(errs, errors.New("--self cannot be combined with a workload id argument"))
 	case !wo.self.Self && wo.WorkloadID == "":
 		errs = append(errs, errors.New("a workload id argument or --self is required"))
@@ -64,6 +65,7 @@ func addWorkload(parent *cobra.Command) {
 		Args:          cobra.MaximumNArgs(1),
 		PreRunE: func(_ *cobra.Command, args []string) error {
 			if len(args) > 0 {
+				opts.argID = args[0]
 				opts.WorkloadID = args[0]
 			}
 			if opts.self.Self && opts.WorkloadID == "" {
