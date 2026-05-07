@@ -9,6 +9,7 @@ package attester
 import (
 	"context"
 	"crypto/sha256"
+	"crypto/sha512"
 	"encoding/hex"
 	"encoding/json"
 	"errors"
@@ -178,7 +179,8 @@ func (a *Attester) FindImage(ctx context.Context, digest string) (*controlv1.Oci
 }
 
 // AttestZone builds an in-toto v1 statement attesting the given zone.
-func (a *Attester) AttestZone(ctx context.Context, zoneID string) (*intoto.Statement, error) {
+// When spiffeURI is non-empty, it is appended as an additional subject.
+func (a *Attester) AttestZone(ctx context.Context, zoneID, spiffeURI string) (*intoto.Statement, error) {
 	host, err := a.HostStatus(ctx)
 	if err != nil {
 		return nil, err
@@ -197,17 +199,23 @@ func (a *Attester) AttestZone(ctx context.Context, zoneID string) (*intoto.State
 		return nil, fmt.Errorf("encoding zone predicate: %w", err)
 	}
 
+	subjects := []*intoto.ResourceDescriptor{zoneSubject(zone)}
+	if s := spiffeSubject(spiffeURI); s != nil {
+		subjects = append(subjects, s)
+	}
+
 	return &intoto.Statement{
 		Type:          intoto.StatementTypeUri,
-		Subject:       []*intoto.ResourceDescriptor{zoneSubject(zone)},
+		Subject:       subjects,
 		PredicateType: predicate.TypeZone,
 		Predicate:     predStruct,
 	}, nil
 }
 
 // AttestWorkload builds an in-toto v1 statement attesting the given
-// workload, including its zone context and OCI image metadata.
-func (a *Attester) AttestWorkload(ctx context.Context, workloadID string) (*intoto.Statement, error) {
+// workload, including its zone context and OCI image metadata. When
+// spiffeURI is non-empty, it is appended as an additional subject.
+func (a *Attester) AttestWorkload(ctx context.Context, workloadID, spiffeURI string) (*intoto.Statement, error) {
 	host, err := a.HostStatus(ctx)
 	if err != nil {
 		return nil, err
@@ -241,9 +249,14 @@ func (a *Attester) AttestWorkload(ctx context.Context, workloadID string) (*into
 		return nil, fmt.Errorf("encoding workload predicate: %w", err)
 	}
 
+	subjects := workloadSubjects(workload)
+	if s := spiffeSubject(spiffeURI); s != nil {
+		subjects = append(subjects, s)
+	}
+
 	return &intoto.Statement{
 		Type:          intoto.StatementTypeUri,
-		Subject:       workloadSubjects(workload),
+		Subject:       subjects,
 		PredicateType: predicate.TypeWorkload,
 		Predicate:     predStruct,
 	}, nil
@@ -437,6 +450,29 @@ func workloadSubjects(w *controlv1.Workload) []*intoto.ResourceDescriptor {
 func sha256Hex(s string) string {
 	sum := sha256.Sum256([]byte(s))
 	return hex.EncodeToString(sum[:])
+}
+
+// sha512Hex returns the lowercase hex sha512 of s.
+func sha512Hex(s string) string {
+	sum := sha512.Sum512([]byte(s))
+	return hex.EncodeToString(sum[:])
+}
+
+// spiffeSubject builds an in-toto subject for a SPIFFE SVID URI: the
+// URI itself goes into the Uri field, and sha256/sha512 digests of the
+// URI string are recorded in the Digest map. Returns nil when uri is
+// empty so callers can append unconditionally.
+func spiffeSubject(uri string) *intoto.ResourceDescriptor {
+	if uri == "" {
+		return nil
+	}
+	return &intoto.ResourceDescriptor{
+		Uri: uri,
+		Digest: map[string]string{
+			"sha256": sha256Hex(uri),
+			"sha512": sha512Hex(uri),
+		},
+	}
 }
 
 // toStruct converts an arbitrary Go value into a protobuf Struct via

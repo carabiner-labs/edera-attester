@@ -18,6 +18,7 @@ import (
 type zoneOptions struct {
 	daemon daemonOptions
 	sign   signOptions
+	spiffe spiffeOptions
 	out    output.Options
 	ZoneID string
 }
@@ -25,6 +26,7 @@ type zoneOptions struct {
 func (zo *zoneOptions) AddFlags(cmd *cobra.Command) {
 	zo.daemon.AddFlags(cmd)
 	zo.sign.AddFlags(cmd)
+	zo.spiffe.AddFlags(cmd)
 	zo.out.AddFlags(cmd)
 }
 
@@ -32,6 +34,7 @@ func (zo *zoneOptions) Validate() error {
 	errs := []error{
 		zo.daemon.Validate(),
 		zo.sign.Validate(),
+		zo.spiffe.Validate(),
 		zo.out.Validate(),
 	}
 	if zo.ZoneID == "" {
@@ -74,7 +77,7 @@ func addZone(parent *cobra.Command) {
 				}
 			}()
 
-			statement, err := a.AttestZone(ctx, opts.ZoneID)
+			statement, err := a.AttestZone(ctx, opts.ZoneID, opts.spiffe.Subject)
 			if err != nil {
 				return fmt.Errorf("building zone attestation: %w", err)
 			}

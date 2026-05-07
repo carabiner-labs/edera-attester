@@ -19,6 +19,7 @@ type workloadOptions struct {
 	daemon     daemonOptions
 	self       selfOptions
 	sign       signOptions
+	spiffe     spiffeOptions
 	out        output.Options
 	WorkloadID string
 	argID      string // raw positional arg, before --self resolution
@@ -28,6 +29,7 @@ func (wo *workloadOptions) AddFlags(cmd *cobra.Command) {
 	wo.daemon.AddFlags(cmd)
 	wo.self.AddFlags(cmd)
 	wo.sign.AddFlags(cmd)
+	wo.spiffe.AddFlags(cmd)
 	wo.out.AddFlags(cmd)
 }
 
@@ -36,6 +38,7 @@ func (wo *workloadOptions) Validate() error {
 		wo.daemon.Validate(),
 		wo.self.Validate(),
 		wo.sign.Validate(),
+		wo.spiffe.Validate(),
 		wo.out.Validate(),
 	}
 	switch {
@@ -93,7 +96,7 @@ func addWorkload(parent *cobra.Command) {
 				}
 			}()
 
-			statement, err := a.AttestWorkload(ctx, opts.WorkloadID)
+			statement, err := a.AttestWorkload(ctx, opts.WorkloadID, opts.spiffe.Subject)
 			if err != nil {
 				return fmt.Errorf("building workload attestation: %w", err)
 			}
