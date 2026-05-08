@@ -1,1 +1,1 @@
-defaultBaseImage: cgr.dev/chainguard/static:latest-root
+defaultBaseImage: gcr.io/distroless/static-debian12:latest
